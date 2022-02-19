@@ -29,18 +29,8 @@
 import UIKit
 
 class WeatherViewController: UIViewController {
-  private let viewModel = WeatherViewModel()
   
-  private let dateFormatter: DateFormatter = {
-    let dateFormatter = DateFormatter()
-    dateFormatter.dateFormat = "EEEE, MMM d"
-    return dateFormatter
-  }()
-  private let tempFormatter: NumberFormatter = {
-    let tempFormatter = NumberFormatter()
-    tempFormatter.numberStyle = .none
-    return tempFormatter
-  }()
+  private let viewModel = WeatherViewModel()
   
   @IBOutlet weak var cityLabel: UILabel!
   @IBOutlet weak var dateLabel: UILabel!
@@ -57,5 +47,39 @@ class WeatherViewController: UIViewController {
     viewModel.locationName.bind { [weak self] locationName in
       self?.cityLabel.text = locationName
     }
+    viewModel.date.bind { [weak self] date in
+      self?.dateLabel.text = date
+    }
+    viewModel.icon.bind { [weak self] icon in
+      self?.currentIcon.image = icon
+    }
+    viewModel.summary.bind { [weak self] summary in
+      self?.currentSummaryLabel.text = summary
+    }
+    viewModel.forecastSummary.bind { [weak self] forecastSummary in
+      self?.forecastSummary.text = forecastSummary
+    }
   }
+  @IBAction func promptForLocation() {
+    // создаем алерт контроллер
+    let alert = UIAlertController(
+      title: "Choose location",
+      message: nil,
+      preferredStyle: .alert)
+    // добавляем поле
+    alert.addTextField()
+    // добавляем action
+    let submitAction = UIAlertAction(
+      title: "Submit",
+      style: .default) { [unowned alert, weak self] _ in
+        guard let newLocation = alert.textFields?.first?.text else { return }
+        // отправляем новую позицию в метод
+        self?.viewModel.changeLocation(to: newLocation)
+    }
+    alert.addAction(submitAction)
+    // показываем алерт
+    present(alert, animated: true)
+  }
+  
+  
 }

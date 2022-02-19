@@ -36,11 +36,26 @@ import Foundation
 import UIKit.UIImage
 // public нужен для доступа к тестированию
 public class WeatherViewModel {
+  private let dateFormatter: DateFormatter = {
+    let dateFormatter = DateFormatter()
+    dateFormatter.dateFormat = "EEEE, MMM d"
+    return dateFormatter
+  }()
+  private let tempFormatter: NumberFormatter = {
+    let tempFormatter = NumberFormatter()
+    tempFormatter.numberStyle = .none
+    return tempFormatter
+  }()
   
-  static let defaultAddress = "McGaheysville, VA"
+  static let defaultAddress = "Murmansk"
   private let geocoder = LocationGeocoder()
   
+  // начальные значения для свойств
   let locationName = Box("Loading...")
+  let date = Box(" ")
+  let icon: Box<UIImage?> = Box(nil)  //no image initially
+  let summary = Box(" ")
+  let forecastSummary = Box(" ")
   
   // viewModel стартует с поиска погоды для defaultAddress
   init() {
@@ -59,18 +74,30 @@ public class WeatherViewModel {
         self.fetchWeatherForLocation(location)
         return
       }
+      self.locationName.value = "Not found"
+      self.date.value = ""
+      self.icon.value = nil
+      self.summary.value = ""
+      self.forecastSummary.value = ""
     }
   }
   private func fetchWeatherForLocation(_ location: Location) {
+    
     WeatherbitService.weatherDataForLocation(
       latitude: location.latitude,
-      longitude: location.longitude) { [weak self] (weatherData, error) in
-        guard
-          let self = self,
-          let weatherData = weatherData
-          else {
-            return
-          }
+      longitude: location.longitude
+    ) { [weak self] (weatherData, error) in
+      
+      guard let self = self,
+            let weatherData = weatherData else { return }
+      
+      // обноаляем свойства после получения данных
+      self.date.value = self.dateFormatter.string(from: weatherData.date)
+      self.icon.value = UIImage(named: weatherData.iconName)
+      let temp = self.tempFormatter
+        .string(from: weatherData.currentTemp as NSNumber) ?? ""
+      self.summary.value = "\(weatherData.description) - \(temp)℉"
+      self.forecastSummary.value = "\nSummary: \(weatherData.description)"
     }
   }
   
